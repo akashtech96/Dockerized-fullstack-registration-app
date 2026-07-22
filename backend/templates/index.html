@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Form</title>
+
+    <style>
+        body {
+            background-color: whitesmoke;
+        }
+
+        p {
+            text-align: center;
+            font-size: 30px;
+            font-family: Arial, Helvetica, sans-serif;
+            color: black;
+        }
+
+        .centered {
+            margin: auto;
+            width: 50%;
+            border: 3px solid green;
+            padding: 15px;
+            text-align: center;
+            background-color: white;
+        }
+
+        input {
+            margin: 8px; 
+            padding: 8px;
+            width: 80%;
+        }
+
+        input[type="submit"] {
+            background-color: green;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <p>Hi, welcome to the Registration Page</p>
+    <p>Today is {{ day_of_week }}</p>
+    <p>The Time is {{ current_time }}</p>
+
+    <div class="centered">
+        <form action="/submit" method="POST">
+
+            <label for="name">Name</label><br>
+            <input type="text" name="name" id="name" placeholder="Enter your name" required><br>
+
+            <label for="password">Password</label><br>
+            <input type="password" name="password" id="password" placeholder="Enter your password" required><br>
+
+            <input type="submit" value="Submit">
+
+        </form>
+    </div>
+
+</body>
+</html>
