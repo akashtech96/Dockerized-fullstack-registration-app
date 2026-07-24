@@ -1,0 +1,19 @@
+# Node.js
+frontend/node_modules/
+
+# Python
+backend/__pycache__/
+backend/*.pyc
+
+# Environment Variables
+backend/.env
+
+# VS Code
+.vscode/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
