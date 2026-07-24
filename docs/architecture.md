@@ -263,3 +263,11 @@ This project demonstrates practical knowledge of:
 - Git Version Control
 - GitHub Repository Management
 - Docker Hub Image Publishing
+
+Docker_Assignment/
+│
+├── README.md               ← Project overview
+├── docs/
+│     ├── architecture.md   ← System design
+│     ├── setup.md          ← Installation guide
+│     └── troubleshooting.md← Problems faced and solutions
