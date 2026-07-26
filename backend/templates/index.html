@@ -1,65 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registration Form</title>
-
-    <style>
-        body {
-            background-color: whitesmoke;
-        }
-
-        p {
-            text-align: center;
-            font-size: 30px;
-            font-family: Arial, Helvetica, sans-serif;
-            color: black;
-        }
-
-        .centered {
-            margin: auto;
-            width: 50%;
-            border: 3px solid green;
-            padding: 15px;
-            text-align: center;
-            background-color: white;
-        }
-
-        input {
-            margin: 8px; 
-            padding: 8px;
-            width: 80%;
-        }
-
-        input[type="submit"] {
-            background-color: green;
-            color: white;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
 
-    <p>Hi, welcome to the Registration Page</p>
-    <p>Today is {{ day_of_week }}</p>
-    <p>The Time is {{ current_time }}</p>
+<h1>Registration Form</h1>
 
-    <div class="centered">
-        <form action="/submit" method="POST">
+<div id="error-message" style="color:red;font-weight:bold;"></div>
 
-            <label for="name">Name</label><br>
-            <input type="text" name="name" id="name" placeholder="Enter your name" required><br>
+<form id="registrationForm">
 
-            <label for="password">Password</label><br>
-            <input type="password" name="password" id="password" placeholder="Enter your password" required><br>
+    <label>Username</label>
 
-            <input type="submit" value="Submit">
+    <input
+        type="text"
+        id="name"
+        name="name"
+        placeholder="Enter Username"
+        required>
 
-        </form>
-    </div>
+    <br><br>
+
+    <label>Password</label>
+
+    <input
+        type="password"
+        id="password"
+        name="password"
+        placeholder="Enter Password"
+        required>
+
+    <br><br>
+
+    <button type="submit">
+        Submit
+    </button>
+
+</form>
+
+<script>
+
+document.getElementById("registrationForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const username = document.getElementById("name").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    const error = document.getElementById("error-message");
+    error.innerHTML = "";
+
+    const response = await fetch("/submit",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+            name:username,
+            password:password
+        })
+
+    });
+
+    const result = await response.json();
+
+    if(!response.ok){
+
+        error.innerHTML = result.error;
+
+    }else{
+
+        alert(result.message);
+        document.getElementById("registrationForm").reset();
+
+    }
+
+});
+
+</script>
 
 </body>
 </html>

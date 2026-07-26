@@ -11,35 +11,85 @@
 
 <body>
 
-    <h1>Registration Form</h1>
+<h1>Registration Form</h1>
 
-    <form action="/submit" method="POST">
+<p id="message" style="color:red;font-weight:bold;"></p>
 
-        <label>Name</label>
+<form id="registerForm">
 
-        <input
-            type="text"
-            name="name"
-            required>
+<label>Name</label>
 
-        <br><br>
+<input
+type="text"
+id="name"
+name="name">
 
-        <label>Password</label>
+<br><br>
 
-        <input
-            type="password"
-            name="password"
-            required>
+<label>Password</label>
 
-        <br><br>
+<input
+type="password"
+id="password"
+name="password">
 
-        <button type="submit">
+<br><br>
 
-            Submit
+<button type="submit">
+Submit
+</button>
 
-        </button>
+</form>
 
-    </form>
+<script>
+
+document
+.getElementById("registerForm")
+.addEventListener("submit", async function(e){
+
+e.preventDefault();
+
+const username=document.getElementById("name").value.trim();
+const password=document.getElementById("password").value.trim();
+
+const response=await fetch("/submit",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+name:username,
+password:password
+
+})
+
+});
+
+const result=await response.json();
+
+const message=document.getElementById("message");
+
+if(result.success){
+
+message.style.color="green";
+message.innerHTML=result.message;
+
+document.getElementById("registerForm").reset();
+
+}else{
+
+message.style.color="red";
+message.innerHTML=result.error;
+
+}
+
+});
+
+</script>
 
 </body>
 

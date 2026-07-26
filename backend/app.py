@@ -1,43 +1,86 @@
 from flask import Flask, request, render_template, jsonify
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 import os
 import pymongo
+import re
+import logging
+from werkzeug.security import generate_password_hash
 
-# -----------------------------
-# Load .env
-# -----------------------------
+# -------------------------------------------------
+# Flask App
+# -------------------------------------------------
+app = Flask(__name__)
+
+# -------------------------------------------------
+# Logging Configuration
+# -------------------------------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+
+logger = logging.getLogger(__name__)
+
+# -------------------------------------------------
+# Validation Patterns
+# -------------------------------------------------
+USERNAME_PATTERN = r"^[A-Za-z][A-Za-z0-9_]{2,19}$"
+
+PASSWORD_PATTERN = (
+    r"^(?=.*[a-z])"
+    r"(?=.*[A-Z])"
+    r"(?=.*\d)"
+    r"(?=.*[@$!%*?&])"
+    r"[A-Za-z\d@$!%*?&]{8,}$"
+)
+
+# -------------------------------------------------
+# Load Environment Variables
+# -------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 dotenv_path = os.path.join(BASE_DIR, ".env")
 
 loaded = load_dotenv(dotenv_path)
 
-print("Current directory:", os.getcwd())
-print("Directory files:", os.listdir(BASE_DIR))
-print("Loaded:", loaded)
-print("Path:", dotenv_path)
-print("File exists:", os.path.exists(dotenv_path))
-
 MONGO_URI = os.getenv("MONGO_URI")
-print("MONGO_URI =", MONGO_URI)
 
-# -----------------------------
+logger.info("Loading environment variables...")
+logger.info(f".env loaded: {loaded}")
+
+if not MONGO_URI:
+    logger.error("MONGO_URI is missing.")
+    raise Exception("MONGO_URI is not configured.")
+
+logger.info("MongoDB URI loaded successfully.")
+
+# -------------------------------------------------
 # MongoDB Connection
-# -----------------------------
-client = pymongo.MongoClient(MONGO_URI)
+# -------------------------------------------------
+try:
+
+    client = pymongo.MongoClient(MONGO_URI)
+
+    client.admin.command("ping")
+
+    logger.info("Connected to MongoDB Atlas successfully.")
+
+except Exception:
+
+    logger.exception("Failed to connect to MongoDB.")
+
+    raise
+
 db = client.Test
+
 collection = db["flask-tutorial"]
 
-# -----------------------------
-# Flask App
-# -----------------------------
-app = Flask(__name__)
-
-# -----------------------------
-# Home Page
-# -----------------------------
+# -------------------------------------------------
+# Home Route
+# -------------------------------------------------
 @app.route("/")
 def home():
+
     day_of_week = datetime.today().strftime("%A")
     current_time = datetime.now().strftime("%H:%M:%S")
 
@@ -47,56 +90,138 @@ def home():
         current_time=current_time
     )
 
-# -----------------------------
-# Submit Form
-# -----------------------------
+# -------------------------------------------------
+# Registration Route
+# -------------------------------------------------
 @app.route("/submit", methods=["POST"])
 def submit():
 
     try:
 
-        # If Express sends JSON
         form_data = request.get_json(silent=True)
 
-        # If Browser sends Form Data
         if not form_data:
             form_data = dict(request.form)
 
-        print("================================")
-        print("Received Data:", form_data)
-        print("================================")
+        username = form_data.get("name", "").strip()
+        password = form_data.get("password", "").strip()
 
-        form_data["created_at"] = datetime.now()
+        # -----------------------------
+        # Empty Validation
+        # -----------------------------
+        if not username or not password:
 
-        collection.insert_one(form_data)
+            return jsonify({
 
-        print("Inserted Successfully")
+                "success": False,
+                "error": "Username and Password are required."
 
-        return "Data submitted successfully!"
+            }), 400
 
-    except Exception as e:
+        # -----------------------------
+        # Username Validation
+        # -----------------------------
+        if not re.fullmatch(USERNAME_PATTERN, username):
 
-        print("========== ERROR ==========")
-        print(e)
-        print("===========================")
+            return jsonify({
 
-        return str(e), 500
+                "success": False,
+                "error": "Username must start with a letter and contain only letters, numbers or underscore (3-20 characters)."
 
-# -----------------------------
-# View Data
-# -----------------------------
+            }), 400
+
+        # -----------------------------
+        # Password Validation
+        # -----------------------------
+        if not re.fullmatch(PASSWORD_PATTERN, password):
+
+            return jsonify({
+
+                "success": False,
+                "error": "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character."
+
+            }), 400
+
+        # -----------------------------
+        # Duplicate Username Check
+        # -----------------------------
+        existing_user = collection.find_one({
+
+            "name": username
+
+        })
+
+        if existing_user:
+
+            return jsonify({
+
+                "success": False,
+                "error": "Username already exists."
+
+            }), 409
+
+        # -----------------------------
+        # Hash Password
+        # -----------------------------
+        hashed_password = generate_password_hash(password)
+
+        # -----------------------------
+        # User Document
+        # -----------------------------
+        user = {
+
+            "name": username,
+            "password": hashed_password,
+            "created_at": datetime.now(timezone.utc)
+
+        }
+
+        collection.insert_one(user)
+
+        logger.info(f"New user registered: {username}")
+
+        return jsonify({
+
+            "success": True,
+            "message": "Registration completed successfully.",
+            "user": username
+
+        }), 201
+
+    except Exception:
+
+        logger.exception("Unexpected server error.")
+
+        return jsonify({
+
+            "success": False,
+            "error": "Internal Server Error"
+
+        }), 500
+
+# -------------------------------------------------
+# View Users
+# -------------------------------------------------
 @app.route("/view")
 def view():
 
-    data = list(collection.find())
+    users = list(collection.find())
 
-    for item in data:
-        item["_id"] = str(item["_id"])
+    for user in users:
 
-    return jsonify(data)
+        user["_id"] = str(user["_id"])
 
-# -----------------------------
-# Run App
-# -----------------------------
+    return jsonify(users)
+
+# -------------------------------------------------
+# Run Flask
+# -------------------------------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+
+    app.run(
+
+        host="0.0.0.0",
+        port=5000,
+        debug=False
+
+    )

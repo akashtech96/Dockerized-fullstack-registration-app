@@ -12,29 +12,29 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {
-  res.render("index");
+    res.render("index");
 });
 
 app.post("/submit", async (req, res) => {
+
     try {
+
         const response = await axios.post(
             "http://backend:5000/submit",
             req.body
         );
 
-        res.send(response.data);
+        res.status(response.status).json(response.data);
 
     } catch (err) {
-        console.error(err.response?.data || err.message);
 
-        res.send(err.response?.data || err.message);
+        res
+            .status(err.response?.status || 500)
+            .json(err.response?.data || {
+                success: false,
+                error: "Internal Server Error"
+            });
+
     }
-});
-
-const PORT = 3000;
-
-app.listen(PORT, () => {
-
-  console.log(`Frontend running on http://localhost:${PORT}`);
 
 });
